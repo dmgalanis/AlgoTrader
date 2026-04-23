@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMA Cloud Trader — Control Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #070b0f;
+      --surface: #0d1419;
+      --surface2: #111920;
+      --border: #1e2d3a;
+      --border-glow: #1a6b4a;
+      --accent: #00e5a0;
+      --accent2: #00b8ff;
+      --accent-dim: rgba(0, 229, 160, 0.12);
+      --accent2-dim: rgba(0, 184, 255, 0.1);
+      --danger: #ff4d6d;
+      --danger-dim: rgba(255, 77, 109, 0.12);
+      --warn: #ffb020;
+      --warn-dim: rgba(255, 176, 32, 0.12);
+      --text: #d0e8e0;
+      --text-muted: #5a7a6e;
+      --text-dim: #3a5448;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'Syne', sans-serif;
+      --radius: 6px;
+      --glow: 0 0 20px rgba(0, 229, 160, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Grid background */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 40px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .logo-block { display: flex; flex-direction: column; gap: 6px; }
+
+    .logo-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: var(--sans);
+      font-size: clamp(22px, 4vw, 34px);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 14px;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .status-dot.live { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .status-dot.paper { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+
+    /* ── Master Toggle ── */
+    .master-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media(max-width:600px) { .master-bar { grid-template-columns: 1fr; } }
+
+    .master-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .master-card.active { border-color: var(--border-glow); box-shadow: var(--glow); }
+
+    .master-card-label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .master-card-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .master-card-sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Toggle Switch */
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle-label { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      cursor: pointer;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      transition: 0.25s;
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 18px; height: 18px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      transition: 0.25s;
+    }
+
+    .toggle input:checked ~ .toggle-track {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+
+    .toggle input:checked ~ .toggle-thumb {
+      transform: translateX(22px);
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* ── Section ── */
+    .section { margin-bottom: 28px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+
+    .section-icon.green { background: var(--accent-dim); }
+    .section-icon.blue { background: var(--accent2-dim); }
+    .section-icon.red { background: var(--danger-dim); }
+    .section-icon.warn { background: var(--warn-dim); }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Card Grid ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .card-grid.wide { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+    .field-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      transition: border-color 0.2s;
+    }
+
+    .field-card:focus-within { border-color: var(--border-glow); }
+
+    .field-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .field-label .hint {
+      color: var(--text-dim);
+      font-size: 9px;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 400;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    input[type="number"]:focus, input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-dim);
+      color: #fff;
+    }
+
+    .field-unit {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 6px;
+    }
+
+    /* ── Watchlist ── */
+    .watchlist-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+      min-height: 36px;
+    }
+
+    .tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      padding: 5px 10px;
+      transition: border-color 0.15s;
+      animation: tagIn 0.15s ease;
+    }
+
+    @keyframes tagIn {
+      from { opacity: 0; transform: scale(0.88); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .tag:hover { border-color: var(--danger); }
+
+    .tag-remove {
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 14px;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+
+    .tag-remove:hover { color: var(--danger); }
+
+    .watchlist-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .watchlist-input-row input {
+      flex: 1;
+      font-size: 13px;
+      padding: 8px 12px;
+      text-transform: uppercase;
+    }
+
+    .btn-add {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-add:hover { background: rgba(0,229,160,0.22); }
+
+    /* ── TP Tiers ── */
+    .tp-tier {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: auto 1fr 1fr auto;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s, opacity 0.2s;
+    }
+
+    .tp-tier.disabled { opacity: 0.45; }
+    .tp-tier:focus-within { border-color: var(--border-glow); }
+
+    .tp-tier-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      width: 20px;
+    }
+
+    .tp-field { display: flex; flex-direction: column; gap: 5px; }
+
+    .tp-field label {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .tp-field input {
+      font-size: 14px;
+      padding: 6px 10px;
+    }
+
+    .tp-enabled-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .tp-enabled-wrap span { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+
+    .btn-add-tier {
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-add-tier:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Save Bar ── */
+    .save-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(7, 11, 15, 0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .save-bar.visible { transform: translateY(0); }
+
+    .save-bar-msg {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--warn);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .save-bar-actions { display: flex; gap: 10px; }
+
+    .btn-primary {
+      background: var(--accent);
+      border: none;
+      color: #000;
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--sans);
+      font-size: 13px;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .btn-secondary:hover { border-color: var(--text-muted); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      top: 24px; right: 24px;
+      z-index: 200;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      box-shadow: var(--glow);
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── JSON output ── */
+    .json-output {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: pre;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      user-select: none;
+      transition: border-color 0.2s;
+    }
+
+    .collapsible-header:hover { border-color: var(--border-glow); color: var(--accent); }
+
+    .collapsible-body { display: none; margin-top: 6px; }
+    .collapsible-body.open { display: block; }
+
+    .caret { transition: transform 0.2s; }
+    .collapsible-header.open .caret { transform: rotate(90deg); }
+
+    @media(max-width:640px) {
+      .tp-tier { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+      .tp-tier-num { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-block">
+      <span class="logo-label">⬡ TastyTrade Algo</span>
+      <h1>EMA Cloud <span>Control Panel</span></h1>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">OFFLINE</span>
+    </div>
+  </header>
+
+  <!-- Master Controls -->
+  <div class="master-bar">
+    <div class="master-card" id="algoCard">
+      <div class="master-card-label">
+        <span class="master-card-title">Algo Execution</span>
+        <span class="master-card-sub">Enable / disable the trading bot</span>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label" id="algoLabel">OFF</span>
+        <label class="toggle">
+          <input type="checkbox" id="algoEnabled" onchange="onToggle()" />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="master-card" id="paperCard">
+      <div class="master-card-label">
+        <span class="master-card-title">Paper Trading</span>
+        <span class="master-card-sub">Use sandbox / live account</span>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label" id="paperLabel">PAPER</span>
+        <label class="toggle">
+          <input type="checkbox" id="paperTrading" onchange="onToggle()" />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Watchlist -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon green">📋</div>
+      <span class="section-title">Watchlist</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="watchlist-wrap">
+      <div class="tag-row" id="watchlistTags"></div>
+      <div class="watchlist-input-row">
+        <input type="text" id="tickerInput" placeholder="Add symbol (e.g. AAPL)" maxlength="8"
+          onkeydown="if(event.key==='Enter') addTicker()" />
+        <button class="btn-add" onclick="addTicker()">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Strategy Parameters -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon blue">📐</div>
+      <span class="section-title">Strategy Parameters</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="card-grid">
+      <div class="field-card">
+        <div class="field-label">Fast EMA <span class="hint">(72 default)</span></div>
+        <input type="number" id="emaFast" min="1" max="999" />
+        <div class="field-unit">periods</div>
+      </div>
+      <div class="field-card">
+        <div class="field-label">Slow EMA <span class="hint">(89 default)</span></div>
+        <input type="number" id="emaSlow" min="1" max="999" />
+        <div class="field-unit">periods</div>
+      </div>
+      <div class="field-card">
+        <div class="field-label">Pullback to Cloud %</div>
+        <input type="number" id="pullbackPct" min="0.01" max="5" step="0.01" />
+        <div class="field-unit">% from 72 EMA (above cloud)</div>
+      </div>
+      <div class="field-card">
+        <div class="field-label">Breakout Above Cloud %</div>
+        <input type="number" id="breakoutPct" min="0.01" max="5" step="0.01" />
+        <div class="field-unit">% above 72 EMA (cross-up)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Management -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon red">🛡️</div>
+      <span class="section-title">Risk Management</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="card-grid">
+      <div class="field-card">
+        <div class="field-label">Risk Per Trade</div>
+        <input type="number" id="riskPct" min="0.1" max="10" step="0.1" />
+        <div class="field-unit">% of total account equity</div>
+      </div>
+      <div class="field-card">
+        <div class="field-label">Stop Loss</div>
+        <input type="number" id="stopLossPct" min="0.1" max="10" step="0.1" />
+        <div class="field-unit">% below entry price</div>
+      </div>
+      <div class="field-card">
+        <div class="field-label">Max Position Size</div>
+        <input type="number" id="maxPosPct" min="1" max="100" step="1" />
+        <div class="field-unit">% of account in any one trade</div>
+      </div>
+      <div class="field-card">
+        <div class="field-label">Max Daily Trades</div>
+        <input type="number" id="dailyLimit" min="1" max="20" step="1" />
+        <div class="field-unit">new algo-triggered positions / day</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Take Profit Tiers -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon warn">🎯</div>
+      <span class="section-title">Take Profit Tiers</span>
+      <div class="section-line"></div>
+    </div>
+    <div id="tpTiers"></div>
+    <button class="btn-add-tier" onclick="addTPTier()">＋ Add Tier</button>
+  </div>
+
+  <!-- JSON Preview -->
+  <div class="section">
+    <div class="collapsible-header" id="jsonToggle" onclick="toggleJson()">
+      <span class="caret">▶</span>
+      <span>settings.json preview</span>
+    </div>
+    <div class="collapsible-body" id="jsonBody">
+      <pre class="json-output" id="jsonPreview"></pre>
+    </div>
+  </div>
+
+</div>
+
+<!-- Save Bar -->
+<div class="save-bar" id="saveBar">
+  <div class="save-bar-msg">⚡ Unsaved changes</div>
+  <div class="save-bar-actions">
+    <button class="btn-secondary" onclick="revertChanges()">Revert</button>
+    <button class="btn-primary" onclick="saveSettings()">Save &amp; Deploy</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Default settings ──────────────────────────────────────────────────────
+  const DEFAULTS = {
+    watchlist: ["AAPL", "MSFT", "NVDA", "TSLA", "SPY", "QQQ"],
+    ema_fast: 72,
+    ema_slow: 89,
+    timeframe_minutes: 15,
+    entry: { pullback_to_cloud_pct: 0.25, breakout_above_cloud_pct: 0.25 },
+    risk: { risk_per_trade_pct: 1.0, max_position_size_pct: 25.0, stop_loss_pct: 1.0 },
+    take_profit_tiers: [
+      { r_multiple: 3, sell_pct: 30, enabled: true },
+      { r_multiple: 5, sell_pct: 30, enabled: false },
+      { r_multiple: 8, sell_pct: 40, enabled: false }
+    ],
+    daily_trade_limit: 2,
+    execution: {
+      paper_trading: true,
+      algo_enabled: false,
+      market_open: "09:30",
+      market_close: "16:00",
+      timezone: "America/New_York"
+    }
+  };
+
+  let settings = JSON.parse(JSON.stringify(DEFAULTS));
+  let savedSettings = JSON.parse(JSON.stringify(DEFAULTS));
+  let dirty = false;
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  function init() {
+    const stored = localStorage.getItem('tt_algo_settings');
+    if (stored) {
+      try {
+        settings = JSON.parse(stored);
+        savedSettings = JSON.parse(stored);
+      } catch(e) {}
+    }
+    renderAll();
+    updateStatus();
+  }
+
+  function renderAll() {
+    // Toggles
+    document.getElementById('algoEnabled').checked = settings.execution.algo_enabled;
+    document.getElementById('paperTrading').checked = settings.execution.paper_trading;
+    updateToggleLabels();
+
+    // Watchlist
+    renderWatchlist();
+
+    // Strategy
+    document.getElementById('emaFast').value = settings.ema_fast;
+    document.getElementById('emaSlow').value = settings.ema_slow;
+    document.getElementById('pullbackPct').value = settings.entry.pullback_to_cloud_pct;
+    document.getElementById('breakoutPct').value = settings.entry.breakout_above_cloud_pct;
+
+    // Risk
+    document.getElementById('riskPct').value = settings.risk.risk_per_trade_pct;
+    document.getElementById('stopLossPct').value = settings.risk.stop_loss_pct;
+    document.getElementById('maxPosPct').value = settings.risk.max_position_size_pct;
+    document.getElementById('dailyLimit').value = settings.daily_trade_limit;
+
+    // TP tiers
+    renderTPTiers();
+
+    // Bind inputs
+    bindInputs();
+    updateJSON();
+  }
+
+  function bindInputs() {
+    const map = {
+      emaFast: v => settings.ema_fast = +v,
+      emaSlow: v => settings.ema_slow = +v,
+      pullbackPct: v => settings.entry.pullback_to_cloud_pct = +v,
+      breakoutPct: v => settings.entry.breakout_above_cloud_pct = +v,
+      riskPct: v => settings.risk.risk_per_trade_pct = +v,
+      stopLossPct: v => settings.risk.stop_loss_pct = +v,
+      maxPosPct: v => settings.risk.max_position_size_pct = +v,
+      dailyLimit: v => settings.daily_trade_limit = +v,
+    };
+
+    Object.entries(map).forEach(([id, fn]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.oninput = () => { fn(el.value); markDirty(); };
+      }
+    });
+  }
+
+  // ── Watchlist ─────────────────────────────────────────────────────────────
+  function renderWatchlist() {
+    const row = document.getElementById('watchlistTags');
+    row.innerHTML = '';
+    settings.watchlist.forEach(sym => {
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.innerHTML = `${sym}<span class="tag-remove" onclick="removeTicker('${sym}')" title="Remove">×</span>`;
+      row.appendChild(tag);
+    });
+  }
+
+  function addTicker() {
+    const input = document.getElementById('tickerInput');
+    const sym = input.value.trim().toUpperCase().replace(/[^A-Z]/g,'');
+    if (!sym) return;
+    if (settings.watchlist.includes(sym)) { showToast(`${sym} already in watchlist`); return; }
+    settings.watchlist.push(sym);
+    input.value = '';
+    renderWatchlist();
+    markDirty();
+  }
+
+  function removeTicker(sym) {
+    settings.watchlist = settings.watchlist.filter(s => s !== sym);
+    renderWatchlist();
+    markDirty();
+  }
+
+  // ── TP Tiers ──────────────────────────────────────────────────────────────
+  function renderTPTiers() {
+    const container = document.getElementById('tpTiers');
+    container.innerHTML = '';
+    settings.take_profit_tiers.forEach((tier, i) => {
+      const el = document.createElement('div');
+      el.className = `tp-tier${tier.enabled ? '' : ' disabled'}`;
+      el.id = `tier-${i}`;
+      el.innerHTML = `
+        <span class="tp-tier-num">T${i+1}</span>
+        <div class="tp-field">
+          <label>R MULTIPLE</label>
+          <input type="number" min="0.5" max="50" step="0.5" value="${tier.r_multiple}"
+            oninput="updateTier(${i},'r_multiple',+this.value)" />
+        </div>
+        <div class="tp-field">
+          <label>SELL %</label>
+          <input type="number" min="1" max="100" step="1" value="${tier.sell_pct}"
+            oninput="updateTier(${i},'sell_pct',+this.value)" />
+        </div>
+        <div class="tp-enabled-wrap">
+          <span>ACTIVE</span>
+          <label class="toggle" style="width:40px;height:22px;">
+            <input type="checkbox" ${tier.enabled ? 'checked' : ''}
+              onchange="updateTier(${i},'enabled',this.checked)" />
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb" style="width:14px;height:14px;top:3px;left:3px;"></div>
+          </label>
+          ${i>0 ? `<span style="cursor:pointer;color:var(--danger);font-size:18px;margin-top:2px;" onclick="removeTier(${i})">×</span>` : ''}
+        </div>
+      `;
+      container.appendChild(el);
+    });
+  }
+
+  function updateTier(i, key, val) {
+    settings.take_profit_tiers[i][key] = val;
+    if (key === 'enabled') {
+      document.getElementById(`tier-${i}`).classList.toggle('disabled', !val);
+    }
+    markDirty();
+  }
+
+  function addTPTier() {
+    settings.take_profit_tiers.push({ r_multiple: 5, sell_pct: 25, enabled: true });
+    renderTPTiers();
+    markDirty();
+  }
+
+  function removeTier(i) {
+    settings.take_profit_tiers.splice(i, 1);
+    renderTPTiers();
+    markDirty();
+  }
+
+  // ── Toggles ───────────────────────────────────────────────────────────────
+  function onToggle() {
+    settings.execution.algo_enabled = document.getElementById('algoEnabled').checked;
+    settings.execution.paper_trading = document.getElementById('paperTrading').checked;
+    updateToggleLabels();
+    updateStatus();
+    markDirty();
+  }
+
+  function updateToggleLabels() {
+    const algoOn = settings.execution.algo_enabled;
+    const paper = settings.execution.paper_trading;
+
+    document.getElementById('algoLabel').textContent = algoOn ? 'ON' : 'OFF';
+    document.getElementById('algoLabel').style.color = algoOn ? 'var(--accent)' : 'var(--text-muted)';
+    document.getElementById('algoCard').classList.toggle('active', algoOn);
+
+    document.getElementById('paperLabel').textContent = paper ? 'PAPER' : 'LIVE';
+    document.getElementById('paperLabel').style.color = paper ? 'var(--accent2)' : 'var(--warn)';
+    document.getElementById('paperCard').classList.toggle('active', !paper);
+  }
+
+  function updateStatus() {
+    const dot = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    const algoOn = settings.execution.algo_enabled;
+    const paper = settings.execution.paper_trading;
+
+    dot.className = 'status-dot';
+    if (algoOn && paper) { dot.classList.add('paper'); text.textContent = 'PAPER TRADING'; }
+    else if (algoOn && !paper) { dot.classList.add('live'); text.textContent = 'LIVE TRADING'; }
+    else { text.textContent = 'OFFLINE'; }
+  }
+
+  // ── Dirty / Save ──────────────────────────────────────────────────────────
+  function markDirty() {
+    dirty = true;
+    document.getElementById('saveBar').classList.add('visible');
+    updateJSON();
+  }
+
+  function revertChanges() {
+    settings = JSON.parse(JSON.stringify(savedSettings));
+    dirty = false;
+    document.getElementById('saveBar').classList.remove('visible');
+    renderAll();
+  }
+
+  function saveSettings() {
+    savedSettings = JSON.parse(JSON.stringify(settings));
+    localStorage.setItem('tt_algo_settings', JSON.stringify(settings, null, 2));
+    dirty = false;
+    document.getElementById('saveBar').classList.remove('visible');
+
+    // Trigger GitHub Actions dispatch (replace with your repo details)
+    triggerGitHubDispatch();
+
+    showToast('✅ Settings saved');
+  }
+
+  // ── GitHub Actions Dispatch ───────────────────────────────────────────────
+  async function triggerGitHubDispatch() {
+    // To enable this:
+    // 1. Create a GitHub Personal Access Token with `repo` scope
+    // 2. Set GITHUB_TOKEN in this dashboard (or pass via env)
+    const token = localStorage.getItem('github_token');
+    const repo = localStorage.getItem('github_repo'); // e.g. "username/tastytrade-algo"
+    if (!token || !repo) return; // silently skip if not configured
+
+    try {
+      await fetch(`https://api.github.com/repos/${repo}/actions/workflows/trader.yml/dispatches`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ref: 'main', inputs: {} })
+      });
+    } catch(e) { console.warn('GitHub dispatch failed:', e); }
+  }
+
+  // ── GitHub Token Config ───────────────────────────────────────────────────
+  function promptGitHubConfig() {
+    const token = prompt('GitHub Personal Access Token (stored locally only):');
+    if (token) localStorage.setItem('github_token', token.trim());
+    const repo = prompt('GitHub repo (owner/name):');
+    if (repo) localStorage.setItem('github_repo', repo.trim());
+    showToast('GitHub config saved');
+  }
+
+  // ── JSON Preview ──────────────────────────────────────────────────────────
+  function updateJSON() {
+    const el = document.getElementById('jsonPreview');
+    if (el) el.textContent = JSON.stringify(settings, null, 2);
+  }
+
+  function toggleJson() {
+    const header = document.getElementById('jsonToggle');
+    const body = document.getElementById('jsonBody');
+    header.classList.toggle('open');
+    body.classList.toggle('open');
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  init();
+</script>
+
+<footer style="
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  pointer-events: none;
+">
+  <span style="
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: #3a5448;
+    letter-spacing: 2px;
+  ">v1.1</span>
+</footer>
+
+</body>
+</html>
