@@ -1,6 +1,6 @@
 {
   "execution": {
-    "paper_trading": true,
+    "paper_trading": false,
     "algo_enabled": false,
     "market_open": "09:30",
     "market_close": "16:00",
