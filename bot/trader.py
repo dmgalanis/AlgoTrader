@@ -292,17 +292,43 @@ class TastyTradeClient:
         self._login(username, password)
 
     def _login(self, username: str, password: str):
-        resp = requests.post(
-            f"{self.base}/sessions",
-            json={"login": username, "password": password, "remember-me": True},
-            timeout=15,
-        )
-        resp.raise_for_status()
-        self.session_token = resp.json()["data"]["session-token"]
-        log.info("✅ TastyTrade authenticated (%s)", "PAPER" if self.paper else "LIVE")
+        # TastyTrade requires a valid User-Agent header — missing or generic values cause 403
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "tastytrade-algo/1.3",
+        }
+        last_err = None
+        for attempt in range(1, 4):  # up to 3 attempts with backoff
+            try:
+                resp = requests.post(
+                    f"{self.base}/sessions",
+                    json={"login": username, "password": password, "remember-me": True},
+                    headers=headers,
+                    timeout=15,
+                )
+                resp.raise_for_status()
+                self.session_token = resp.json()["data"]["session-token"]
+                log.info("✅ TastyTrade authenticated (%s)", "PAPER" if self.paper else "LIVE")
+                return
+            except requests.exceptions.HTTPError as e:
+                last_err = e
+                status = e.response.status_code if e.response is not None else 0
+                if status == 401:
+                    log.error("❌ Login failed: invalid credentials (401). Check TASTYTRADE_USERNAME and TASTYTRADE_PASSWORD.")
+                    raise
+                if status == 403:
+                    log.error("❌ Login failed: forbidden (403). Ensure you have opted into the TastyTrade Open API at tastytrade.com → My Profile → API.")
+                    raise
+                log.warning("⚠️  Login attempt %d failed: %s — retrying in %ds", attempt, e, attempt * 5)
+                time.sleep(attempt * 5)
+        raise last_err
 
     def _h(self):
-        return {"Authorization": self.session_token, "Content-Type": "application/json"}
+        return {
+            "Authorization": self.session_token,
+            "Content-Type": "application/json",
+            "User-Agent": "tastytrade-algo/1.3",
+        }
 
     def get_account(self) -> str:
         resp = requests.get(f"{self.base}/customers/me/accounts", headers=self._h(), timeout=10)
