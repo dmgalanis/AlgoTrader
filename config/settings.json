@@ -1,0 +1,50 @@
+{
+  "execution": {
+    "paper_trading": true,
+    "algo_enabled": false,
+    "market_open": "09:30",
+    "market_close": "16:00",
+    "timezone": "America/New_York"
+  },
+  "strategy_15min": {
+    "enabled": true,
+    "watchlist": ["AAPL", "MSFT", "NVDA", "TSLA", "SPY", "QQQ"],
+    "ema_fast": 72,
+    "ema_slow": 89,
+    "timeframe_minutes": 15,
+    "entry": {
+      "pullback_to_cloud_pct": 0.25,
+      "breakout_above_cloud_pct": 0.25
+    },
+    "risk": {
+      "risk_per_trade_pct": 1.0,
+      "max_position_size_pct": 25.0,
+      "stop_loss_pct": 1.0
+    },
+    "take_profit_tiers": [
+      { "r_multiple": 3, "sell_pct": 30, "enabled": true },
+      { "r_multiple": 5, "sell_pct": 30, "enabled": false },
+      { "r_multiple": 8, "sell_pct": 40, "enabled": false }
+    ],
+    "daily_trade_limit": 2
+  },
+  "strategy_daily": {
+    "enabled": false,
+    "watchlist": ["AAPL", "MSFT", "NVDA", "SPY"],
+    "ema_period": 21,
+    "entry": {
+      "pullback_to_ema_pct": 1.0
+    },
+    "risk": {
+      "risk_per_trade_pct": 1.0,
+      "max_position_size_pct": 25.0,
+      "stop_loss_pct": 2.0
+    },
+    "take_profit_tiers": [
+      { "r_multiple": 3, "sell_pct": 33, "enabled": true },
+      { "r_multiple": 5, "sell_pct": 33, "enabled": false },
+      { "r_multiple": 8, "sell_pct": 34, "enabled": false }
+    ],
+    "daily_trade_limit": 1
+  }
+}
