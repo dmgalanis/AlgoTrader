@@ -1,6 +1,6 @@
 {
-  "name": "EMA Cloud Trader",
-  "short_name": "EMA Trader",
+  "name": "AlgoTrader CP",
+  "short_name": "AlgoTrader CP",
   "description": "TastyTrade Multi-Strategy Auto-Trader Control Panel",
   "start_url": "./index.html",
   "scope": "./",
