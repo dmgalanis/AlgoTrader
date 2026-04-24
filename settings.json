@@ -1,7 +1,7 @@
 {
   "execution": {
     "paper_trading": true,
-    "algo_enabled": false,
+    "algo_enabled": true,
     "market_open": "09:30",
     "market_close": "16:00",
     "timezone": "America/New_York"
