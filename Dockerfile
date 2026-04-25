@@ -13,4 +13,4 @@ COPY config/ ./config/
 # Logs go to stdout + file
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "bot/trader.py"]
+CMD ["python", "trader.py"]
