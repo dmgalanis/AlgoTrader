@@ -5,8 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bot/trader.py .
 COPY bot/ ./bot/
+COPY config/ ./config/
 
 ENV PYTHONUNBUFFERED=1
 
